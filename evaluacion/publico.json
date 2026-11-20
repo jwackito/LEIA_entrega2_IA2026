@@ -1,0 +1,476 @@
+{
+  "nombre": "publico",
+  "version": 1,
+  "descripcion": "Dataset público de interacciones completas para autocorrección. Se evalúa solo el resultado final de cada conversación.",
+  "resultados_posibles": {
+    "inscripcion_aceptada": "La inscripción se realizó. Se verifican alumno, materia y turno contra el estado final de la API.",
+    "datos_insuficientes": "El agente pide el dato faltante indicado en campo: legajo, materia o turno.",
+    "inscripcion_rechazada": "El agente informa que no se pudo inscribir e incluye el código de error exacto indicado en codigo."
+  },
+  "notas": [
+    "Este dataset es público y se usa para autocorrección.",
+    "Cada entrada de casos es una conversación completa: mensajes es la secuencia de mensajes del usuario.",
+    "Solo se corrige el resultado final de la conversación, no las respuestas intermedias.",
+    "Para agregar un caso, sumá un objeto a casos con id único, mensajes y esperado.",
+    "Si el caso necesita materias, alumnos o inscripciones nuevas, ampliá fixtures.",
+    "Cada tipo tiene dos escenarios. Para sumar otro, agregá un objeto a casos con el mismo tipo."
+  ],
+  "fixtures": {
+    "materias": [
+      {
+        "codigo": "SI202",
+        "nombre": "Ingeniería de Software 1",
+        "correlativas": [],
+        "turnos": {
+          "manana": 30
+        }
+      },
+      {
+        "codigo": "SI208",
+        "nombre": "Taller de lecto-comprensión y Traducción en Inglés",
+        "correlativas": [],
+        "turnos": {
+          "manana": 30,
+          "tarde": 30,
+          "noche": 30
+        }
+      },
+      {
+        "codigo": "SI302",
+        "nombre": "Ingeniería de Software 2",
+        "correlativas": [
+          "SI202",
+          "SI208"
+        ],
+        "turnos": {
+          "manana": 30,
+          "tarde": 30,
+          "noche": 30
+        }
+      },
+      {
+        "codigo": "CNE",
+        "nombre": "Expresión de Problemas y Algoritmos",
+        "correlativas": [],
+        "turnos": {
+          "manana": 30,
+          "tarde": 30,
+          "noche": 30
+        }
+      },
+      {
+        "codigo": "SI101",
+        "nombre": "Matemática 1",
+        "correlativas": [],
+        "turnos": {
+          "manana": 30
+        }
+      },
+      {
+        "codigo": "SI210",
+        "nombre": "Diseño de Bases de Datos",
+        "correlativas": [],
+        "turnos": {
+          "tarde": 0,
+          "noche": 0
+        }
+      }
+    ],
+    "alumnos": [
+      {
+        "legajo": "1005",
+        "nombre": "Ana",
+        "apellido": "Pérez",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      },
+      {
+        "legajo": "1015",
+        "nombre": "Bruno",
+        "apellido": "Gómez",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      },
+      {
+        "legajo": "1006",
+        "nombre": "Carla",
+        "apellido": "Fernández",
+        "aprobadas": [
+          "SI202"
+        ]
+      },
+      {
+        "legajo": "1016",
+        "nombre": "Diego",
+        "apellido": "López",
+        "aprobadas": [
+          "SI202"
+        ]
+      },
+      {
+        "legajo": "1007",
+        "nombre": "Elena",
+        "apellido": "Martínez",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      },
+      {
+        "legajo": "1017",
+        "nombre": "Facundo",
+        "apellido": "Ruiz",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      },
+      {
+        "legajo": "1008",
+        "nombre": "Lucía",
+        "apellido": "Díaz",
+        "aprobadas": [
+          "SI202",
+          "SI208",
+          "SI302"
+        ]
+      },
+      {
+        "legajo": "1018",
+        "nombre": "Martín",
+        "apellido": "Sosa",
+        "aprobadas": [
+          "SI202",
+          "SI208",
+          "SI302"
+        ]
+      },
+      {
+        "legajo": "1009",
+        "nombre": "Sofía",
+        "apellido": "Torres",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      },
+      {
+        "legajo": "1019",
+        "nombre": "Nicolás",
+        "apellido": "Ramírez",
+        "aprobadas": [
+          "SI202",
+          "SI208"
+        ]
+      }
+    ],
+    "inscripciones": [
+      {
+        "alumno": "1007",
+        "materia": "CNE",
+        "turno": "tarde"
+      },
+      {
+        "alumno": "1017",
+        "materia": "CNE",
+        "turno": "noche"
+      },
+      {
+        "alumno": "1009",
+        "materia": "SI302",
+        "turno": "manana"
+      },
+      {
+        "alumno": "1019",
+        "materia": "SI302",
+        "turno": "noche"
+      }
+    ]
+  },
+  "casos": [
+    {
+      "tipo": "datos_insuficientes_legajo",
+      "id": "insuficiente_legajo_si302",
+      "mensajes": [
+        "inscribime a la materia de ingeniería de software (SI302) al turno de la tarde"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "legajo"
+      }
+    },
+    {
+      "tipo": "datos_insuficientes_legajo",
+      "id": "insuficiente_legajo_cne",
+      "mensajes": [
+        "inscribime a Expresión de Problemas y Algoritmos turno noche"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "legajo"
+      }
+    },
+    {
+      "tipo": "datos_insuficientes_materia",
+      "id": "insuficiente_materia_1005",
+      "mensajes": [
+        "quiero inscribirme, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "materia"
+      }
+    },
+    {
+      "tipo": "datos_insuficientes_materia",
+      "id": "insuficiente_materia_1015",
+      "mensajes": [
+        "quiero anotarme en una materia, legajo 1015"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "materia"
+      }
+    },
+    {
+      "tipo": "datos_insuficientes_turno",
+      "id": "insuficiente_turno_si302_1005",
+      "mensajes": [
+        "inscribime a SI302, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "turno"
+      }
+    },
+    {
+      "tipo": "datos_insuficientes_turno",
+      "id": "insuficiente_turno_cne_1015",
+      "mensajes": [
+        "inscribime a CNE, legajo 1015"
+      ],
+      "esperado": {
+        "resultado": "datos_insuficientes",
+        "campo": "turno"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_directa",
+      "id": "aceptada_si302_tarde_1005",
+      "mensajes": [
+        "inscribime a SI302 turno tarde, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1005",
+        "materia": "SI302",
+        "turno": "tarde"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_directa",
+      "id": "aceptada_si302_noche_1015",
+      "mensajes": [
+        "inscribí a 1015 en SI302 en el turno noche"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1015",
+        "materia": "SI302",
+        "turno": "noche"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_por_nombre",
+      "id": "aceptada_por_nombre_si302_tarde_1005",
+      "mensajes": [
+        "inscribime a ingeniería de software 2 turno tarde, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1005",
+        "materia": "SI302",
+        "turno": "tarde"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_por_nombre",
+      "id": "aceptada_por_nombre_si302_noche_1015",
+      "mensajes": [
+        "anotá a 1015 en Ingeniería de Software 2, turno noche"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1015",
+        "materia": "SI302",
+        "turno": "noche"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_multiturno",
+      "id": "aceptada_multiturno_si302_1005",
+      "mensajes": [
+        "inscribime a la materia de ingeniería de software (SI302) al turno de la tarde",
+        "mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1005",
+        "materia": "SI302",
+        "turno": "tarde"
+      }
+    },
+    {
+      "tipo": "inscripcion_aceptada_multiturno",
+      "id": "aceptada_multiturno_si302_1015",
+      "mensajes": [
+        "inscribime a SI302 en el turno noche",
+        "mi legajo es 1015"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_aceptada",
+        "alumno": "1015",
+        "materia": "SI302",
+        "turno": "noche"
+      }
+    },
+    {
+      "tipo": "rechazada_correlativa",
+      "id": "rechazada_correlativa_1006",
+      "mensajes": [
+        "inscribime a SI302 turno tarde, mi legajo es 1006"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "CORRELATIVA_PENDIENTE"
+      }
+    },
+    {
+      "tipo": "rechazada_correlativa",
+      "id": "rechazada_correlativa_multiturno_1016",
+      "mensajes": [
+        "inscribime a SI302 turno noche",
+        "mi legajo es 1016"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "CORRELATIVA_PENDIENTE"
+      }
+    },
+    {
+      "tipo": "rechazada_aprobada",
+      "id": "rechazada_aprobada_1008",
+      "mensajes": [
+        "inscribime a SI302 turno tarde, mi legajo es 1008"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "MATERIA_APROBADA"
+      }
+    },
+    {
+      "tipo": "rechazada_aprobada",
+      "id": "rechazada_aprobada_multiturno_1018",
+      "mensajes": [
+        "inscribime a SI302 turno noche",
+        "mi legajo es 1018"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "MATERIA_APROBADA"
+      }
+    },
+    {
+      "tipo": "rechazada_sin_cupo",
+      "id": "rechazada_sin_cupo_tarde_1005",
+      "mensajes": [
+        "inscribime a Diseño de Bases de Datos turno tarde, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "SIN_CUPO"
+      }
+    },
+    {
+      "tipo": "rechazada_sin_cupo",
+      "id": "rechazada_sin_cupo_noche_1015",
+      "mensajes": [
+        "anotá a 1015 en Diseño de Bases de Datos, turno noche"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "SIN_CUPO"
+      }
+    },
+    {
+      "tipo": "rechazada_choque",
+      "id": "rechazada_choque_tarde_1007",
+      "mensajes": [
+        "inscribime a SI302 turno tarde, mi legajo es 1007"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "CHOQUE_TURNO"
+      }
+    },
+    {
+      "tipo": "rechazada_choque",
+      "id": "rechazada_choque_noche_1017",
+      "mensajes": [
+        "anotá a 1017 en SI302, turno noche"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "CHOQUE_TURNO"
+      }
+    },
+    {
+      "tipo": "rechazada_duplicada",
+      "id": "rechazada_duplicada_tarde_1009",
+      "mensajes": [
+        "inscribime a SI302 turno tarde, mi legajo es 1009"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "INSCRIPCION_DUPLICADA"
+      }
+    },
+    {
+      "tipo": "rechazada_duplicada",
+      "id": "rechazada_duplicada_manana_1019",
+      "mensajes": [
+        "anotá a 1019 en SI302, turno mañana"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "INSCRIPCION_DUPLICADA"
+      }
+    },
+    {
+      "tipo": "rechazada_turno_no_disponible",
+      "id": "rechazada_turno_no_disponible_tarde_1005",
+      "mensajes": [
+        "inscribime a Matemática 1 turno tarde, mi legajo es 1005"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "TURNO_NO_DISPONIBLE"
+      }
+    },
+    {
+      "tipo": "rechazada_turno_no_disponible",
+      "id": "rechazada_turno_no_disponible_noche_1015",
+      "mensajes": [
+        "anotá a 1015 en Matemática 1, turno noche"
+      ],
+      "esperado": {
+        "resultado": "inscripcion_rechazada",
+        "codigo": "TURNO_NO_DISPONIBLE"
+      }
+    }
+  ]
+}

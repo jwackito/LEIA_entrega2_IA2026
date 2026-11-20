@@ -1,0 +1,17 @@
+# Material privado
+evaluacion/privado.json
+agente-resuelto/
+Bogado_J/
+.agents/
+openspec/
+entregas/
+
+# Artefactos
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+*.db
+resultado.txt
+resumen.csv

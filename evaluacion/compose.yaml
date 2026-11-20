@@ -1,0 +1,16 @@
+services:
+  evaluacion:
+    build:
+      context: ..
+      dockerfile: evaluacion/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      MODEL: ${MODEL:-qwen3.5:9b}
+      DATASET_FILE: /datos/${DATASET:-publico}.json
+    user: "${EVAL_UID:-1000}:${EVAL_GID:-1000}"
+    volumes:
+      - ${ENTREGA:-../entregas}:/agente
+      - ./:/datos:ro
+    command: ["/agente"]
