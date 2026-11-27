@@ -62,7 +62,7 @@ El corrector importa tu `agent.py`, le inyecta la configuración y llama a tres 
 | Importable sin efectos | Nada de conexiones, prints ni `sys.exit` al importar. El REPL va dentro de `if __name__ == "__main__":`. |
 | Funciones requeridas | `responder(messages) -> str`, `_system_prompt() -> str`, `ejecutar_herramienta(nombre, argumentos)`. |
 | Variables inyectadas | El corrector setea `MODEL`, `OLLAMA_URL`, `API_URL` y `LEGAJO_ACTUAL` después de importar. Leelas en el momento de usarlas; no las copies a constantes al importar. |
-| Historial | `responder` recibe la lista completa de mensajes y debe dejarla actualizada con el `assistant` (tool calls) y los `tool` (resultados). La lista se reutiliza entre turnos. |
+| Historial | `responder` recibe la lista `messages` completa y debe **mutarla en el lugar** con los mensajes `assistant` y `tool`. La misma lista se reutiliza entre turnos. Ver “El historial de mensajes”. |
 | API | Todas las llamadas a la API pasan por `ejecutar_herramienta`. El corrector envuelve esa función para trazar; llamala por nombre desde `responder`, no guardes una referencia local. |
 | Errores de API | Devolvé `{"error": <cuerpo>}`. Los rechazos de inscripción traen `{"code": ..., "detail": ...}`. |
 | Nombre `inscribir` | Es obligatorio: el corrector busca ese nombre en la traza para verificar el código de rechazo. Las demás herramientas pueden mantener los nombres de la referencia. |
@@ -71,6 +71,103 @@ El corrector importa tu `agent.py`, le inyecta la configuración y llama a tres 
 | Servicios | No arranques la API, no resetees/siembre la base y no escribas archivos. El corrector ya lo hace. |
 | Red | El agente solo habla con `API_URL` y `OLLAMA_URL`. No llames a servicios externos ni leas datasets para responder. |
 | Límite de pasos | Mantené un límite de pasos. La referencia usa `MAX_PASOS = 8` y devuelve un mensaje claro si se agota. |
+
+### El historial de mensajes
+
+El corrector arma una lista por caso y la reutiliza en todos los turnos:
+
+```python
+messages = [{"role": "system", "content": agente._system_prompt()}]
+
+for texto in caso["mensajes"]:
+    messages.append({"role": "user", "content": texto})
+    respuesta = agente.responder(messages)
+```
+
+`responder` recibe esa misma lista, no una copia. Tenés que agregar los mensajes nuevos a la lista original. No crees otra lista, no la vacíes y no vuelvas a agregar el `system` ni los `user` anteriores.
+
+#### Orden del protocolo
+
+```text
+system → user → assistant(tool_calls) → tool(resultado 1) → tool(resultado 2) → assistant(respuesta final) → user siguiente
+```
+
+#### Ejemplo de cómo evoluciona la lista
+
+Al empezar el turno:
+
+```python
+[
+    {"role": "system", "content": "..."},
+    {"role": "user", "content": "Inscribí a 1001 en CNE turno mañana"},
+]
+```
+
+Después de la primera respuesta de Ollama:
+
+```python
+[
+    # ...
+    {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "function": {
+                    "name": "inscribir",
+                    "arguments": {
+                        "alumno": "1001",
+                        "materia": "CNE",
+                        "turno": "manana",
+                    },
+                }
+            }
+        ],
+    },
+]
+```
+
+Después de ejecutar la herramienta:
+
+```python
+[
+    # ...
+    {
+        "role": "tool",
+        "content": '{"id": 7, "alumno": "1001", "materia": "CNE", "turno": "manana"}',
+        "tool_name": "inscribir",
+    },
+]
+```
+
+Después de la respuesta final de Ollama:
+
+```python
+[
+    # ...
+    {"role": "assistant", "content": "Listo, inscribí a 1001 en CNE turno mañana."},
+]
+```
+
+#### Reglas concretas
+
+1. Agregá **todos** los mensajes `assistant` que devuelve Ollama, incluido el final sin `tool_calls`. La referencia lo hace y así el turno siguiente ve la respuesta anterior.
+2. Si el `assistant` trae varias `tool_calls`, agregá **un solo** mensaje `assistant` con todas y después **un** mensaje `tool` por cada resultado, en el mismo orden.
+3. El `content` del mensaje `tool` es el resultado serializado como string JSON (`json.dumps(..., ensure_ascii=False)`), no un diccionario.
+4. El `tool_name` del mensaje `tool` es el nombre de la herramienta que produjo el resultado.
+5. El mensaje `assistant` con `tool_calls` va **antes** de los `tool`. Si los invertís, el modelo pierde la relación entre el pedido y el resultado.
+6. No agregues el mensaje `user` actual: ya lo agregó el corrector antes de llamar a `responder`.
+7. No agregues un segundo `system` en cada turno: el corrector lo puso una vez al inicio del caso.
+8. Si el modelo devuelve `content` vacío y `tool_calls`, el mensaje `assistant` igual va con `content: ""`.
+9. Si el modelo devuelve `content` vacío y no hay `tool_calls`, agregá el `assistant` igual (con `content: ""`) y devolvé `"(sin respuesta)"` para no devolver un string vacío.
+10. Mutá la lista original. No hagas `messages = list(messages)`, `messages = messages + [...]` ni `messages = [...]` dentro de `responder`: eso rebindea el nombre local y el corrector no ve los cambios.
+
+#### Por qué importa
+
+- Si `responder` no muta la lista, el segundo mensaje del usuario se procesa sin el historial anterior y los casos multi-turno fallan.
+- Si `responder` crea una lista nueva y solo la usa localmente, el corrector no la ve y el turno siguiente pierde el contexto.
+- Si agregás el `user` o el `system` de nuevo, el modelo recibe mensajes duplicados y puede confundirse.
+- Si los `tool` van antes del `assistant` con `tool_calls`, el modelo no sabe a qué pedido corresponde cada resultado.
 
 ### Cómo clasifica el corrector
 
