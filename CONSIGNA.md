@@ -67,7 +67,7 @@ El corrector importa tu `agent.py`, le inyecta la configuración y llama a tres 
 | Errores de API | Devolvé `{"error": <cuerpo>}`. Los rechazos de inscripción traen `{"code": ..., "detail": ...}`. |
 | Nombre `inscribir` | Es obligatorio: el corrector busca ese nombre en la traza para verificar el código de rechazo. Las demás herramientas pueden mantener los nombres de la referencia. |
 | Un solo archivo | Todo el código va en `agent.py`. No hay módulos auxiliares ni `requirements.txt` propios. |
-| Entorno | Python 3.12; stdlib + `requests`. Nada de dependencias extra. |
+| Entorno | Python 3.12; stdlib + `requests`. Nada de dependencias extra. No usar el cliente para Python de `ollama`. |
 | Servicios | No arranques la API, no resetees/siembre la base y no escribas archivos. El corrector ya lo hace. |
 | Red | El agente solo habla con `API_URL` y `OLLAMA_URL`. No llames a servicios externos ni leas datasets para responder. |
 | Límite de pasos | Mantené un límite de pasos. La referencia usa `MAX_PASOS = 8` y devuelve un mensaje claro si se agota. |
@@ -344,7 +344,7 @@ Si no te sentís cómodo con la terminal:
 
 ## 8. Cómo se evalúa
 
-El corrector está en `evaluacion/corregir.py` y es público: pueden leerlo.
+El corrector está en `evaluacion/corregir.py` y es público: pueden leerlo, no modificarlo.
 
 Para cada caso:
 
@@ -354,6 +354,8 @@ Para cada caso:
 4. Setea `LEGAJO_ACTUAL` y arma el historial con `_system_prompt()`.
 5. Ejecuta los mensajes del caso llamando a `responder`.
 6. Revisa la API y la traza de herramientas para clasificar.
+
+Si tenes dudas de como hacer esto, revisá la sección 6. 
 
 Los resultados posibles son los de la sección 4: aceptada, rechazada o datos insuficientes.
 
