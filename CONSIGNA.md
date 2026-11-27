@@ -57,12 +57,21 @@ La referencia está para arrancar, no para copiar y pegar sin entender. Si refac
 
 El corrector importa tu `agent.py`, le inyecta la configuración y llama a tres funciones. Si refactorizás, estas reglas no se negocian:
 
+### Casos y turnos
+
+Antes de seguir, dos definiciones que se usan en todo el contrato:
+
+- Un **caso** es un escenario independiente del dataset. Tiene un `id`, un `legajo_actual` opcional, una lista de mensajes del usuario (`mensajes`) y un resultado esperado (`esperado`). Para cada caso, el corrector resetea y carga los fixtures en la API, crea una lista `messages` nueva y ejecuta el caso de punta a punta. Los casos no comparten estado: aunque el agente se importe una sola vez para toda la entrega, la conversación se reinicia en cada caso.
+- Un **turno de conversación** es cada mensaje del usuario dentro de un caso, junto con la respuesta completa del agente (incluidas las tool calls y sus resultados). Si un caso tiene `"mensajes": ["...", "..."]`, tiene dos turnos. La lista `messages` se mantiene entre los turnos del mismo caso y se descarta al terminar el caso.
+
+No confundir el **turno de conversación** con el **turno de cursada** (`manana`, `tarde`, `noche`), que es el horario de la materia.
+
 | Requisito | Detalle |
 |---|---|
 | Importable sin efectos | Nada de conexiones, prints ni `sys.exit` al importar. El REPL va dentro de `if __name__ == "__main__":`. |
 | Funciones requeridas | `responder(messages) -> str`, `_system_prompt() -> str`, `ejecutar_herramienta(nombre, argumentos)`. |
 | Variables inyectadas | El corrector setea `MODEL`, `OLLAMA_URL`, `API_URL` y `LEGAJO_ACTUAL` después de importar. Leelas en el momento de usarlas; no las copies a constantes al importar. |
-| Historial | `responder` recibe la lista `messages` completa y debe **mutarla en el lugar** con los mensajes `assistant` y `tool`. La misma lista se reutiliza entre turnos. Ver “El historial de mensajes”. |
+| Historial | `responder` recibe la lista `messages` completa y debe **mutarla en el lugar** con los mensajes `assistant` y `tool`. La lista se crea de nuevo para cada caso y se reutiliza entre los turnos de ese caso. Ver “El historial de mensajes”. |
 | API | Todas las llamadas a la API pasan por `ejecutar_herramienta`. El corrector envuelve esa función para trazar; llamala por nombre desde `responder`, no guardes una referencia local. |
 | Errores de API | Devolvé `{"error": <cuerpo>}`. Los rechazos de inscripción traen `{"code": ..., "detail": ...}`. |
 | Nombre `inscribir` | Es obligatorio: el corrector busca ese nombre en la traza para verificar el código de rechazo. Las demás herramientas pueden mantener los nombres de la referencia. |
@@ -86,6 +95,8 @@ for texto in caso["mensajes"]:
 
 `responder` recibe esa misma lista, no una copia. Tenés que agregar los mensajes nuevos a la lista original. No crees otra lista, no la vacíes y no vuelvas a agregar el `system` ni los `user` anteriores.
 
+La lista se crea de nuevo al empezar cada caso y se descarta al terminarlo. Dentro de un caso, la misma lista se reutiliza en todos los turnos. Por eso no guardes el historial en una variable global, en un atributo de módulo ni en una clase: el caso siguiente tiene que arrancar solo con su `system` y su primer `user`. El corrector también setea `LEGAJO_ACTUAL` por caso; no lo cachees.
+
 #### Orden del protocolo
 
 ```text
@@ -94,7 +105,7 @@ system → user → assistant(tool_calls) → tool(resultado 1) → tool(resulta
 
 #### Ejemplo de cómo evoluciona la lista
 
-Al empezar el turno:
+Al empezar el caso:
 
 ```python
 [
@@ -149,6 +160,8 @@ Después de la respuesta final de Ollama:
 ]
 ```
 
+Si el caso tiene otro mensaje del usuario, el corrector lo agrega al final de esta misma lista y vuelve a llamar a `responder`. La lista no se reinicia entre turnos.
+
 #### Reglas concretas
 
 1. Agregá **todos** los mensajes `assistant` que devuelve Ollama, incluido el final sin `tool_calls`. La referencia lo hace y así el turno siguiente ve la respuesta anterior.
@@ -161,6 +174,7 @@ Después de la respuesta final de Ollama:
 8. Si el modelo devuelve `content` vacío y `tool_calls`, el mensaje `assistant` igual va con `content: ""`.
 9. Si el modelo devuelve `content` vacío y no hay `tool_calls`, agregá el `assistant` igual (con `content: ""`) y devolvé `"(sin respuesta)"` para no devolver un string vacío.
 10. Mutá la lista original. No hagas `messages = list(messages)`, `messages = messages + [...]` ni `messages = [...]` dentro de `responder`: eso rebindea el nombre local y el corrector no ve los cambios.
+11. No guardes el historial en estado global. El corrector crea una lista nueva por caso; si usás una global, vas a mezclar conversaciones y los casos van a fallar.
 
 #### Por qué importa
 
@@ -168,6 +182,7 @@ Después de la respuesta final de Ollama:
 - Si `responder` crea una lista nueva y solo la usa localmente, el corrector no la ve y el turno siguiente pierde el contexto.
 - Si agregás el `user` o el `system` de nuevo, el modelo recibe mensajes duplicados y puede confundirse.
 - Si los `tool` van antes del `assistant` con `tool_calls`, el modelo no sabe a qué pedido corresponde cada resultado.
+- Si guardás el historial en una variable global, el caso siguiente arranca con mensajes del anterior y contamina la conversación.
 
 ### Cómo clasifica el corrector
 
