@@ -2,8 +2,12 @@
 
 Trabajo práctico de agentes de inscripciones a materias.
 
+**Consigna y forma de entrega:** [`CONSIGNA.md`](CONSIGNA.md).
+
 ## Contenido
 
+- `CONSIGNA.md`: enunciado, contrato del agente y pasos para entregar el PR.
+- `agente-referencia/`: agente base, README explicativo y tests.
 - `sistema-inscripciones/`: API FastAPI + SQLite con alumnos, materias, turnos y correlativas.
 - `evaluacion/`: corrector automático de agentes contra un dataset de casos.
 - `ollama/`: servicio Ollama opcional para correr la evaluación.
